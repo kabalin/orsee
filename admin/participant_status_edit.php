@@ -43,13 +43,22 @@ if ($proceed) {
 
         if ($not_unconfirmed && $_REQUEST['is_default_active']=="y" && $_REQUEST['is_default_inactive']=="y") {
             message(lang('error_participant_status_cannot_be_default_for_both_active_and_inactive'));
-            $_REQUEST['is_default_active']="n"; $_REQUEST['is_default_inactive']="n";
+            $_REQUEST['is_default_active']="n";
+            $_REQUEST['is_default_inactive']="n";
             $continue=false;
         }
 
         if ($not_unconfirmed && $_REQUEST['is_default_active']=="y" && $_REQUEST['is_default_autoexcluded']=="y") {
             message(lang('error_participant_status_cannot_be_default_for_both_active_and_autoexcluded'));
-            $_REQUEST['is_default_active']="n"; $_REQUEST['is_default_autoexcluded']="n";
+            $_REQUEST['is_default_active']="n";
+            $_REQUEST['is_default_autoexcluded']="n";
+            $continue=false;
+        }
+
+        if ($not_unconfirmed && $_REQUEST['eligible_for_experiments']=="y" && $_REQUEST['is_default_autoexcluded']=="y") {
+            message(lang('error_participant_status_cannot_be_default_for_autoexcluded_and_eligible_for_experiment'));
+            $_REQUEST['is_default_autoexcluded']="n";
+            $_REQUEST['eligible_for_experiments']="n";
             $continue=false;
         }
 
@@ -243,7 +252,8 @@ if ($proceed) {
                     '.lang('is_default_for_participants_becoming_autoexcluded').'
                 </TD>
                     <TD>';
-                    if ($status['is_default_active']=="y" || $status['is_default_autoexcluded']=="y") {
+                    if ($status['is_default_active']=="y" || $status['is_default_autoexcluded']=="y"
+                            || $status['eligible_for_experiments']=="y") {
                         if ($status['is_default_autoexcluded']=="y") {
                             echo lang('yes');
                         } else {
@@ -251,13 +261,13 @@ if ($proceed) {
                         }
                     } else {
                         echo '
-                            <INPUT type=radio name="is_default_autoexcluded" value="y"';
-                            if ($status['is_default_autoexclude']=="y") echo ' CHECKED';
-                            echo '>'.lang('yes').'
-                            &nbsp;&nbsp;
-                            <INPUT type=radio name="is_default_autoexclude" value="n"';
-                            if ($status['is_default_autoexclude']!="y") echo ' CHECKED';
-                            echo '>'.lang('no');
+                        <INPUT type=radio name="is_default_autoexcluded" value="y"';
+                        if ($status['is_default_autoexclude']=="y") echo ' CHECKED';
+                        echo '>'.lang('yes').'
+                        &nbsp;&nbsp;
+                        <INPUT type=radio name="is_default_autoexclude" value="n"';
+                        if ($status['is_default_autoexclude']!="y") echo ' CHECKED';
+                        echo '>'.lang('no');
                     }
         echo '      </TD>
                 </TR>';
@@ -298,14 +308,20 @@ if ($proceed) {
                 <TD valign=top>
                     '.lang('eligible_for_experiments').'
                 </TD>
-                    <TD>
-                    <INPUT type=radio name="eligible_for_experiments" value="y"';
+                    <TD>';
+                    if ($status['is_default_autoexcluded']=="y") {
+                        echo lang('no');
+                    } else {
+                        echo '
+                        <INPUT type=radio name="eligible_for_experiments" value="y"';
                         if ($status['eligible_for_experiments']=="y") echo ' CHECKED';
                         echo '>'.lang('yes').'
-                    &nbsp;&nbsp;
-                    <INPUT type=radio name="eligible_for_experiments" value="n"';
-                         if ($status['eligible_for_experiments']!="y") echo ' CHECKED';
-                        echo '>'.lang('no').'   </TD>
+                        &nbsp;&nbsp;
+                        <INPUT type=radio name="eligible_for_experiments" value="n"';
+                        if ($status['eligible_for_experiments']!="y") echo ' CHECKED';
+                        echo '>'.lang('no');
+                    }
+            echo '  </TD>
                 </TR>';
     }
         echo '
