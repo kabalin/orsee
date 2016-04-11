@@ -590,16 +590,6 @@ $system__options_general[]=array(
 
 
 $system__options_general[]=array(
-'option_name'=>'automatic_exclusion_to_participant_status',
-'option_text'=>'Participant status to be assigned to excluded subjects',
-'type'=>'plain',
-'field'=>'func:participant_status__select_field("options[automatic_exclusion_to_participant_status]",
-            $options["automatic_exclusion_to_participant_status"],array("0"))'
-);
-
-
-
-$system__options_general[]=array(
 'option_name'=>'automatic_exclusion_inform',
 'option_text'=>'Inform excluded participants about automatic exclusion?',
 'type'=>'select_yesno_switchy',
