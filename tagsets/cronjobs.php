@@ -413,6 +413,7 @@ function cron__check_for_participant_exclusion() {
     global $settings;
     $mess="";
     if ($settings['automatic_exclusion']=='y') {
+        // Process automatic exclusion.
         $status_query=participant_status__get_pquery_snippet("eligible_for_experiments");
         $query="SELECT * FROM ".table('participants')."
                 WHERE ".$status_query."
@@ -425,8 +426,22 @@ function cron__check_for_participant_exclusion() {
             if ($done=='informed') $informed++;
             $excluded++;
         }
+        // Process redemption.
+        $status_query=participant_status__get_pquery_snippet("is_default_autoexcluded");
+        $query="SELECT * FROM ".table('participants')."
+                WHERE ".$status_query."
+                AND number_noshowup < '".$settings['automatic_exclusion_noshows']."'";
+        $result=or_query($query);
+
+        $redeemed=0;
+        while ($line=pdo_fetch_assoc($result)) {
+            participant__redeem_participant($line);
+            $redeemed++;
+        }
+
         if ($excluded>0) $mess.="participants excluded: ".$excluded;
         if ($informed>0) $mess.="\nparticipants informed: ".$informed;
+        if ($redeemed>0) $mess.="\nparticipants redeemed: ".$redeemed;
     }
     return $mess;
 }

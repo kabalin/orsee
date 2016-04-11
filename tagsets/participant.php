@@ -46,6 +46,26 @@ function participant__exclude_participant($participant) {
     return $result;
 }
 
+function participant__redeem_participant($participant) {
+    global $settings, $lang;
+    if (lang('lang')) $notice=lang('automatic_redemption_by_system');
+    else $notice=load_language_symbol('automatic_redemption_by_system',$settings['admin_standard_language']);
+    $remarks=$participant['remarks']."\n".$notice.' '.$participant['number_noshowup'];
+    $pars=array(':status_id'=>participant_status__get("is_default_active"),
+                ':deletion_time'=>0,
+                ':remarks'=>$remarks,
+                ':participant_id'=>$participant['participant_id']);
+
+    $query="UPDATE ".table('participants')."
+            SET status_id=:status_id,
+            deletion_time=:deletion_time,
+            remarks=:remarks
+            WHERE participant_id=:participant_id";
+    $done=or_query($query,$pars);
+    $result='redeemed';
+    return $result;
+}
+
 function participants__get_statistics($participant_id) {
     global $lang, $color;
     echo '<TABLE style="width: 90%">
