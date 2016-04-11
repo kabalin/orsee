@@ -35,7 +35,7 @@ if ($proceed) {
     $query="SELECT * from ".table('lang')." WHERE content_type='participant_status_error' AND content_name= :status_id";
     $status_error=orsee_query($query,$pars);
 
-    if ($status['is_default_active']=="y" || $status['is_default_inactive']=="y") {
+    if ($status['is_default_active']=="y" || $status['is_default_inactive']=="y" || $status['is_default_autoexcluded']=="y") {
         message(lang('cannot_delete_participant_status_which_is_default'));
         redirect ('admin/participant_status_edit.php?status_id='.$status_id);
     }

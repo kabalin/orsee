@@ -30,7 +30,7 @@ if ($proceed) {
             $status_error=orsee_query($query,$pars);
         }
     } else {
-        $status=array('is_default_active'=>'n','is_default_inactive'=>'n','access_to_profile'=>'n','eligible_for_experiments'=>'n');
+        $status=array('is_default_active'=>'n','is_default_inactive'=>'n','access_to_profile'=>'n','eligible_for_experiments'=>'n','is_default_autoexcluded'=>'n');
         $status_name=array();
         $status_error=array();
     }
@@ -44,6 +44,12 @@ if ($proceed) {
         if ($not_unconfirmed && $_REQUEST['is_default_active']=="y" && $_REQUEST['is_default_inactive']=="y") {
             message(lang('error_participant_status_cannot_be_default_for_both_active_and_inactive'));
             $_REQUEST['is_default_active']="n"; $_REQUEST['is_default_inactive']="n";
+            $continue=false;
+        }
+
+        if ($not_unconfirmed && $_REQUEST['is_default_active']=="y" && $_REQUEST['is_default_autoexcluded']=="y") {
+            message(lang('error_participant_status_cannot_be_default_for_both_active_and_autoexcluded'));
+            $_REQUEST['is_default_active']="n"; $_REQUEST['is_default_autoexcluded']="n";
             $continue=false;
         }
 
@@ -114,6 +120,12 @@ if ($proceed) {
                 if ($status['is_default_inactive']=="y") {
                     $query="UPDATE ".table('participant_statuses')."
                             SET is_default_inactive='n'
+                            WHERE status_id!= :status_id";
+                    $done=or_query($query,$pars);
+                }
+                if ($status['is_default_autoexcluded']=="y") {
+                    $query="UPDATE ".table('participant_statuses')."
+                            SET is_default_autoexcluded='n'
                             WHERE status_id!= :status_id";
                     $done=or_query($query,$pars);
                 }
@@ -225,7 +237,30 @@ if ($proceed) {
                     }
         echo '      </TD>
                 </TR>';
-
+        echo '
+                <TR>
+                <TD valign=top>
+                    '.lang('is_default_for_participants_becoming_autoexcluded').'
+                </TD>
+                    <TD>';
+                    if ($status['is_default_active']=="y" || $status['is_default_autoexcluded']=="y") {
+                        if ($status['is_default_autoexcluded']=="y") {
+                            echo lang('yes');
+                        } else {
+                            echo lang('no');
+                        }
+                    } else {
+                        echo '
+                            <INPUT type=radio name="is_default_autoexcluded" value="y"';
+                            if ($status['is_default_autoexclude']=="y") echo ' CHECKED';
+                            echo '>'.lang('yes').'
+                            &nbsp;&nbsp;
+                            <INPUT type=radio name="is_default_autoexclude" value="n"';
+                            if ($status['is_default_autoexclude']!="y") echo ' CHECKED';
+                            echo '>'.lang('no');
+                    }
+        echo '      </TD>
+                </TR>';
         echo '
             <TR>
                 <TD>

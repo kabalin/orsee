@@ -28,6 +28,7 @@ if ($proceed) {
                 <TD>'.lang('eligible_for_experiments').'</TD>
                 <TD>'.lang('default_for_active_participants').'</TD>
                 <TD>'.lang('default_for_inactive_participants').'</TD>
+                <TD>'.lang('default_for_autoexcluded_participants').'</TD>
                 <TD>'.lang('subjects').'</TD>';
     if (check_allow('participantstatus_edit')) echo '<TD></TD>';
     echo '
@@ -65,6 +66,9 @@ if ($proceed) {
         echo '</TD>
                 <TD>';
         if ($line['is_default_inactive']=='y') echo '<B>'.lang('y').'</B>';
+        echo '</TD>
+                <TD>';
+        if ($line['is_default_autoexcluded']=='y') echo '<B>'.lang('y').'</B>';
         echo '</TD>
                 <TD>';
         if (isset($status_counts[$line['status_id']])) echo $status_counts[$line['status_id']];

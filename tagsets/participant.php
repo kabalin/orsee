@@ -1186,26 +1186,30 @@ function participant_status__get_statuses() {
 }
 
 function participant_status__get($what="is_default_active") {
-    // what can be access_to_profile, eligible_for_experiments, is_default_active or is_default_inactive
+    // what can be access_to_profile, eligible_for_experiments, is_default_active, is_default_inactive, is_default_autoexcluded
     $statuses=participant_status__get_statuses();
     $res=array();
     foreach ($statuses as $status_id=>$status) {
         if($status[$what]=='y') $res[]=$status_id;
     }
-    if ($what=='is_default_active' || $what=='is_default_inactive') return $res[0];
-    else return $res;
+    if ($what=='is_default_active' || $what=='is_default_inactive' || $what=='is_default_autoexcluded') {
+        return $res[0];
+    }
+    return $res;
 }
 
 function participant_status__get_pquery_snippet($what="eligible_for_experiments") {
-    // what can be access_to_profile, eligible_for_experiments, is_default_active or is_default_inactive
+    // what can be access_to_profile, eligible_for_experiments, is_default_active, is_default_inactive, is_default_autoexcluded
     $check_statuses=participant_status__get($what);
     if (count($check_statuses)>0) {
-        if ($what=='is_default_active' || $what=='is_default_inactive') return " status_id='".$check_statuses."' ";
-        else {
+        if ($what=='is_default_active' || $what=='is_default_inactive' || $what=='is_default_autoexcluded') {
+            return " status_id='".$check_statuses."' ";
+        } else {
             $snippet=" status_id IN (".implode(", ",$check_statuses).") ";
             return $snippet;
         }
-    } else return '';
+    }
+    return '';
 }
 
 function participant_status__get_name($status_id) {
@@ -1221,7 +1225,7 @@ function participant_status__get_name($status_id) {
 }
 
 function participant__get_participant_status($participant_id) {
-    //status_type can be access_to_profile, eligible_for_experiments, is_default_active or is_default_inactive
+    //status_type can be access_to_profile, eligible_for_experiments, is_default_active, is_default_inactive, is_default_autoexcluded
     $statuses=participant_status__get_statuses();
     $pars=array(':participant_id'=>$participant_id);
     $query="SELECT status_id
