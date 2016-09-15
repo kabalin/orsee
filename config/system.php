@@ -134,6 +134,7 @@ $system__admin_rights=array(
 "participants_edit:create participant/change participant profile:participants_show",
 "participants_change_status:change the status of a participant from active to deleted/excluded:participants_edit",
 "participants_show:search participants, view search results",
+"participants_bulk_invite_new:send bulk invites to new participants:participants_show",
 "participants_unconfirmed_edit:view and delete unconfirmed participant entries",
 "participationstatus_add:add new experiment/session participation status:participationstatus_edit",
 "participationstatus_delete:delete a experiment/session participation status:participationstatus_edit",
