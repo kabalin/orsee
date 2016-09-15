@@ -122,8 +122,12 @@ if ($proceed) {
                     '.button_link('participants_duplicates.php',lang('search_for_duplicates'),'magnet').'
                 </TD>
             ';
-        echo '
-                </TR>
+        if (check_allow('participants_bulk_invite_new')) echo '
+                <TD>
+                    '.button_link('participants_bulk_invite_new.php',lang('bulk_invite_new'),'envelope').'
+                </TD>
+            ';
+    echo '      </TR>
                 </TABLE>
             </TD></TR>
             </TABLE>
