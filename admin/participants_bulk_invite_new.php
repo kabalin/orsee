@@ -9,6 +9,14 @@ if ($proceed) {
     $allow=check_allow('participants_bulk_invite_new');
 }
 
+if ($_REQUEST['clear']) {
+    $query="DELETE FROM ".table('bulk_invite_participants');
+    or_query($query);
+    message("The list of potential subjects was cleared.");
+    redirect ("admin/participants_bulk_invite_new.php");
+}
+
+
 if ($_REQUEST['submit']) {
     $error_count = 0;
     $records = 0;
@@ -19,7 +27,7 @@ if ($_REQUEST['submit']) {
         message(lang('bulk_invite_new_form_error_not_csv'));
         $error_count++;
     } else {
-        message($_FILES['csvfile']['name'].' ('.round($_FILES['csvfile']['size']/1000, 2).'Kb) '.lang('bulk_invite_new_form_suncessfully_uploaded'));
+        message($_FILES['csvfile']['name'].' ('.round($_FILES['csvfile']['size']/1000, 2).'Kb) '.lang('bulk_invite_new_form_sucessfully_uploaded'));
     }
 
     if (!$error_count) {
@@ -68,17 +76,25 @@ echo '<BR>
         <TABLE width="80%" border="0">';
 
 if ($proceed) {
-    $query="select count(*) as ip_num from ".table('bulk_invite_participants');
+    $query="SELECT count(*) AS ip_num FROM ".table('bulk_invite_participants');
     $result=or_query($query);
-    $line=pdo_fetch_assoc($result);
+    $total=pdo_fetch_assoc($result);
 
     $preview = 10;
     if ($_REQUEST['show'] && $_REQUEST['preview']) {
-        $preview = (int) $_REQUEST['preview'];
+        $preview = $_REQUEST['preview'];
     }
 
-    if ($line['ip_num']) {
-        echo '<tr><td colspan="2" align="center" style="font-weight: bold">'.$line['ip_num'].' participants in the list.</td></tr>';
+    if ($total['ip_num']) {
+
+        $query="SELECT count(bip.bip_id) AS ip_num_unique FROM ".table('bulk_invite_participants')." bip
+                    LEFT JOIN ".table('participants')." p ON (bip.email = p.email)
+                    WHERE p.email IS NULL";
+        $result=or_query($query);
+        $total_unique=pdo_fetch_assoc($result);
+
+        echo '<tr><td colspan="2" align="center" style="font-weight: bold">'.$total['ip_num'].' total participants in the list.</td></tr>';
+        echo '<tr><td colspan="2" align="center" style="font-weight: bold">'.$total_unique['ip_num_unique'].' unique participants in the list.</td></tr>';
         echo '<tr><td colspan="2" align="center">';
         echo '<FORM action="participants_bulk_invite_new.php" method="POST" ENCTYPE="multipart/form-data">';
         echo '<span>'.lang('bulk_invite_new_form_preview').'</span><SELECT name="preview">';
@@ -98,6 +114,7 @@ if ($proceed) {
         }
         echo '    </SELECT>
                   <INPUT class="button" name="show" type="submit" value="'.lang('show').'">
+                  <INPUT class="button" type="submit" name="clear" value="Clear the list" '.$disabled.' onclick="return confirm(\'This will clear the whole list of subjects. Click OK to proceed.\')">
               </FORM>
               </td></tr>';
         echo '<tr><td colspan="2" align="center">&nbsp;</td></tr>';
