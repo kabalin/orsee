@@ -17,10 +17,19 @@ if ($proceed) {
 
     if (isset($_REQUEST['os']) && $_REQUEST['os']>0) $offset=$_REQUEST['os']; else $offset=0;
 
+    if (isset($_REQUEST['type'])) $type=$_REQUEST['type']; else $type=false;
+
+    $equery = '';
+    $url_params = '';
     if ($experiment_id) {
-        $equery=" AND experiment_id=:experiment_id ";
-        $pars[':experiment_id']=$experiment_id;
-    } else $equery="";
+        $equery = " AND experiment_id=:experiment_id ";
+        $pars[':experiment_id'] = $experiment_id;
+    }
+    if ($type) {
+        $equery = " AND mail_type=:mail_type ";
+        $pars[':mail_type'] = $type;
+        $url_params = 'type='.$type;
+    }
 
     if (isset($_REQUEST['deleteall']) && $_REQUEST['deleteall']) $dall=true; else $dall=false;
     if (isset($_REQUEST['deleteallonpage']) && $_REQUEST['deleteallonpage']) $dallpage=true; else $dallpage=false;
@@ -97,6 +106,8 @@ if ($proceed) {
         }
         if ($experiment_id) {
             redirect ("admin/experiment_mailqueue_show.php?experiment_id=".$experiment_id);
+        } elseif ($url_params) {
+            redirect ("admin/mailqueue_show.php?".$url_params);
         } else {
             redirect ("admin/mailqueue_show.php");
         }
@@ -105,11 +116,6 @@ if ($proceed) {
 
 if ($proceed) {
 
-    $pars=array();
-    if ($experiment_id) {
-        $equery=" AND experiment_id=:experiment_id ";
-        $pars[':experiment_id']=$experiment_id;
-    } else $equery="";
     $pars[':offset']=$offset;
     $pars[':limit']=$limit;
     $query="SELECT * FROM ".table('mail_queue')."
@@ -125,6 +131,9 @@ if ($proceed) {
             <INPUT type="hidden" name="experiment_id" value="'.$experiment_id.'">';
     } elseif (check_allow('mailqueue_edit_all')) {
         echo '<FORM action="mailqueue_show.php" method="POST">';
+    }
+    if ($type) {
+        echo '<INPUT type="hidden" name="type" value="'.$type.'">';
     }
 
     echo '<TABLE width=90% border=0>
