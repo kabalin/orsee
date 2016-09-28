@@ -16,6 +16,13 @@ if ($_REQUEST['clear']) {
     redirect ("admin/participants_bulk_invite_new.php");
 }
 
+if ($_REQUEST['sendall']) {
+    $number = experimentmail__send_bulk_invite_new_mail_to_queue();
+    print_r($number);
+    message($number.' '.lang('xxx_bulk_invite_new_mails_sent_to_mail_queue'));
+    log__admin("bulk_invite_new_mail","recipients:".$number);
+    redirect("admin/participants_bulk_invite_new.php");
+}
 
 if ($_REQUEST['upload']) {
     $error_count = 0;
@@ -92,7 +99,13 @@ if ($proceed) {
                     WHERE p.email IS NULL";
         $result=or_query($query);
         $total_unique=pdo_fetch_assoc($result);
+        $qmails=experimentmail__mails_in_queue("bulk_invite_new_mail");
+        $disabled_element = '';
+        if ($qmails) {
+            $disabled_element = 'disabled';
+        }
 
+        echo '<FORM action="participants_bulk_invite_new.php" method="POST">';
         echo '
             <TR>
                 <TD colspan=2>
@@ -103,16 +116,24 @@ if ($proceed) {
                     </TR>
                     <TR class="empty">
                     <TD colspan=2>'.lang('inv_mails_in_mail_queue').': ';
-                    $qmails=experimentmail__mails_in_queue("bulk_invite_new_mail");
                     echo $qmails;
 
                 echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.button_link('participants_bulk_invite_new_mailqueue_show.php',lang('monitor_bulk_invite_new_mailqueue'),'envelope-square');
             echo '</TD></TR></TABLE>
                 </TD>
             </TR>';
+        echo '
+            <TR>
+                <TD colspan=2>
+                    <TABLE class="or_option_buttons_box" style="background: '.$color['options_box_background'].';">
+                    <TR class="empty"><TD align="right" colspan="2">
+                        <INPUT class="button" '.$disabled_element.' type=submit name="sendall" value="'.lang('send_to_all_unique').'">
+                    </TD></TR>';
+            echo '  </TABLE>
+                </TD>
+            </TR>';
 
         echo '<tr><td colspan="2" align="center">';
-        echo '<FORM action="participants_bulk_invite_new.php" method="POST" ENCTYPE="multipart/form-data">';
         echo '<span>'.lang('bulk_invite_new_form_preview').'</span><SELECT name="preview">';
 
         $options = array(10, 50, 100, 'all');
@@ -130,7 +151,7 @@ if ($proceed) {
         }
         echo '    </SELECT>
                   <INPUT class="button" name="show" type="submit" value="'.lang('show').'">
-                  <INPUT class="button" type="submit" name="clear" value="Clear the list" '.$disabled.' onclick="return confirm(\'This will clear the whole list of subjects. Click OK to proceed.\')">
+                  <INPUT class="button" type="submit" name="clear" value="Clear the list" '.$disabled_element.' onclick="return confirm(\'This will clear the whole list of subjects. Click OK to proceed.\')">
               </FORM>
               </td></tr>';
         echo '<tr><td colspan="2" align="center">&nbsp;</td></tr>';

@@ -214,6 +214,24 @@ function experimentmail__send_bulk_mail_to_queue($bulk_id,$part_array) {
     return $return;
 }
 
+function experimentmail__send_bulk_invite_new_mail_to_queue() {
+    $return=false;
+    $now=time();
+    $pars = array();
+
+    $query="SELECT * FROM ".table('bulk_invite_participants');
+    $result=or_query($query);
+    while ($line=pdo_fetch_assoc($result)) {
+        $pars[]=array(':participant_id' => $line['bip_id']);
+    }
+    $query="INSERT INTO ".table('mail_queue')."
+        SET timestamp='".$now."',
+        mail_type='bulk_invite_new_mail',
+        mail_recipient= :participant_id";
+    or_query($query,$pars);
+    return count($pars);
+}
+
 
 function experimentmail__send_session_reminders_to_queue($session) {
     $pars=array(':experiment_id'=>$session['experiment_id'],
