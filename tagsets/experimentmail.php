@@ -219,7 +219,9 @@ function experimentmail__send_bulk_invite_new_mail_to_queue() {
     $now=time();
     $pars = array();
 
-    $query="SELECT * FROM ".table('bulk_invite_participants');
+    $query="SELECT bip.* FROM ".table('bulk_invite_participants')." bip
+                LEFT JOIN ".table('participants')." p ON (bip.email = p.email)
+                WHERE p.email IS NULL";
     $result=or_query($query);
     while ($line=pdo_fetch_assoc($result)) {
         $pars[]=array(':participant_id' => $line['bip_id']);
