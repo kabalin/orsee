@@ -17,7 +17,7 @@ if ($_REQUEST['clear']) {
 }
 
 
-if ($_REQUEST['submit']) {
+if ($_REQUEST['upload']) {
     $error_count = 0;
     $records = 0;
     if ($_FILES['csvfile']['error']) {
@@ -93,8 +93,24 @@ if ($proceed) {
         $result=or_query($query);
         $total_unique=pdo_fetch_assoc($result);
 
-        echo '<tr><td colspan="2" align="center" style="font-weight: bold">'.$total['ip_num'].' total participants in the list.</td></tr>';
-        echo '<tr><td colspan="2" align="center" style="font-weight: bold">'.$total_unique['ip_num_unique'].' unique participants in the list.</td></tr>';
+        echo '
+            <TR>
+                <TD colspan=2>
+                    <TABLE class="or_option_buttons_box" style="background: '.$color['options_box_background'].';">
+                    <TR>
+                    <TD>'.lang('bulk_invite_new_total_uploaded').': '.$total['ip_num'].'</TD>
+                    <TD>'.lang('bulk_invite_new_total_unique').': '.$total_unique['ip_num_unique'].'</TD>
+                    </TR>
+                    <TR class="empty">
+                    <TD colspan=2>'.lang('inv_mails_in_mail_queue').': ';
+                    $qmails=experimentmail__mails_in_queue("bulk_invite_new_mail");
+                    echo $qmails;
+
+                echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.button_link('participants_bulk_invite_new_mailqueue_show.php',lang('monitor_bulk_invite_new_mailqueue'),'envelope-square');
+            echo '</TD></TR></TABLE>
+                </TD>
+            </TR>';
+
         echo '<tr><td colspan="2" align="center">';
         echo '<FORM action="participants_bulk_invite_new.php" method="POST" ENCTYPE="multipart/form-data">';
         echo '<span>'.lang('bulk_invite_new_form_preview').'</span><SELECT name="preview">';
@@ -151,7 +167,7 @@ if ($proceed) {
                   <INPUT NAME="csvfile" TYPE="file">';
         echo '</td></tr>';
         echo '<tr><td colspan="2" align="center">
-                  <INPUT class="button" name="submit" type="submit" value="'.lang('upload').'">
+                  <INPUT class="button" name="upload" type="submit" value="'.lang('upload').'">
               </FORM>
               </td></tr>';
     }
