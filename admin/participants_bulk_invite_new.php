@@ -16,9 +16,12 @@ if ($_REQUEST['clear']) {
     redirect ("admin/participants_bulk_invite_new.php");
 }
 
-if ($_REQUEST['sendall']) {
-    $number = experimentmail__send_bulk_invite_new_mail_to_queue();
-    print_r($number);
+if ($_REQUEST['sendallunique'] || $_REQUEST['sendallnotsent']) {
+    $sendallnotsent = false;
+    if ($_REQUEST['sendallnotsent']) {
+        $sendallnotsent = true;
+    }
+    $number = experimentmail__send_bulk_invite_new_mail_to_queue($sendallnotsent);
     message($number.' '.lang('xxx_bulk_invite_new_mails_sent_to_mail_queue'));
     log__admin("bulk_invite_new_mail","recipients:".$number);
     redirect("admin/participants_bulk_invite_new.php");
@@ -83,7 +86,7 @@ echo '<BR>
         <TABLE width="80%" border="0">';
 
 if ($proceed) {
-    $query="SELECT count(*) AS ip_num FROM ".table('bulk_invite_participants');
+    $query="SELECT COUNT(*) AS total, SUM(email_sent) AS total_sent FROM ".table('bulk_invite_participants');
     $result=or_query($query);
     $total=pdo_fetch_assoc($result);
 
@@ -92,9 +95,9 @@ if ($proceed) {
         $preview = $_REQUEST['preview'];
     }
 
-    if ($total['ip_num']) {
+    if ($total['total']) {
 
-        $query="SELECT count(bip.bip_id) AS ip_num_unique FROM ".table('bulk_invite_participants')." bip
+        $query="SELECT count(bip.bip_id) AS total_unique FROM ".table('bulk_invite_participants')." bip
                     LEFT JOIN ".table('participants')." p ON (bip.email = p.email)
                     WHERE p.email IS NULL";
         $result=or_query($query);
@@ -111,11 +114,12 @@ if ($proceed) {
                 <TD colspan=2>
                     <TABLE class="or_option_buttons_box" style="background: '.$color['options_box_background'].';">
                     <TR>
-                    <TD>'.lang('bulk_invite_new_total_uploaded').': '.$total['ip_num'].'</TD>
-                    <TD>'.lang('bulk_invite_new_total_unique').': '.$total_unique['ip_num_unique'].'</TD>
+                    <TD>'.lang('bulk_invite_new_total_uploaded').': '.$total['total'].'</TD>
+                    <TD>'.lang('bulk_invite_new_total_unique').': '.$total_unique['total_unique'].'</TD>
+                    <TD>'.lang('bulk_invite_new_total_sent').': '.$total['total_sent'].'</TD>
                     </TR>
                     <TR class="empty">
-                    <TD colspan=2>'.lang('inv_mails_in_mail_queue').': ';
+                    <TD colspan="3">'.lang('inv_mails_in_mail_queue').': ';
                     echo $qmails;
         if (check_allow('mailqueue_show_all')) {
             echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.button_link('mailqueue_show.php?type=bulk_invite_new_mail',lang('monitor_bulk_invite_new_mailqueue'),'envelope-square');
@@ -128,7 +132,8 @@ if ($proceed) {
                 <TD colspan=2>
                     <TABLE class="or_option_buttons_box" style="background: '.$color['options_box_background'].';">
                     <TR class="empty"><TD align="right" colspan="2">
-                        <INPUT class="button" '.$disabled_element.' type=submit name="sendall" value="'.lang('send_to_all_unique').'">
+                        <INPUT class="button" '.$disabled_element.' type=submit name="sendallnotsent" value="'.lang('send_to_all_unique_not_sent').'">
+                        <INPUT class="button" '.$disabled_element.' type=submit name="sendallunique" value="'.lang('send_to_all_unique').'">
                     </TD></TR>';
             echo '  </TABLE>
                 </TD>

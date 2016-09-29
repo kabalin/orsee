@@ -214,14 +214,18 @@ function experimentmail__send_bulk_mail_to_queue($bulk_id,$part_array) {
     return $return;
 }
 
-function experimentmail__send_bulk_invite_new_mail_to_queue() {
-    $return=false;
+function experimentmail__send_bulk_invite_new_mail_to_queue($sendallnotsent = false) {
     $now=time();
     $pars = array();
 
+    $cond = '';
+    if ($sendallnotsent) {
+        // Only add participants that have not got email already.
+        $cond = ' AND bip.email_sent = 0';
+    }
     $query="SELECT bip.* FROM ".table('bulk_invite_participants')." bip
                 LEFT JOIN ".table('participants')." p ON (bip.email = p.email)
-                WHERE p.email IS NULL";
+                WHERE p.email IS NULL" . $cond;
     $result=or_query($query);
     while ($line=pdo_fetch_assoc($result)) {
         $pars[]=array(':bulk_id' => $line['bip_id']);
@@ -518,6 +522,10 @@ function experimentmail__send_mails_from_queue($number=0,$type="",$experiment_id
         if ($done) {
             $mails_sent++;
             $deleted=experimentmail__delete_from_queue($mail['mail_id']);
+            // update bulk_invite_participants email_sent flag.
+            $pars=array(':bip_id'=>$mail['bulk_id']);
+            $query="UPDATE ".table('bulk_invite_participants')." SET email_sent = 1 WHERE bip_id = :bip_id";
+            $done=or_query($query,$pars);
         } else {
             $mail['error']="sending";
             $errors[]=$mail;
@@ -754,6 +762,8 @@ function experimentmail__send_bulk_invite_new_mail($mail) {
         $headers = "From: ".$sender."\r\n";
 
         $done=experimentmail__mail($recipient,$subject,$message,$headers);
+
+
         return $done;
 }
 
