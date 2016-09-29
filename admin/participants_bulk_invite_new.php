@@ -117,8 +117,9 @@ if ($proceed) {
                     <TR class="empty">
                     <TD colspan=2>'.lang('inv_mails_in_mail_queue').': ';
                     echo $qmails;
-
-                echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.button_link('participants_bulk_invite_new_mailqueue_show.php',lang('monitor_bulk_invite_new_mailqueue'),'envelope-square');
+        if (check_allow('mailqueue_show_all')) {
+            echo '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;'.button_link('mailqueue_show.php?type=bulk_invite_new_mail',lang('monitor_bulk_invite_new_mailqueue'),'envelope-square');
+        }
             echo '</TD></TR></TABLE>
                 </TD>
             </TR>';
