@@ -224,12 +224,12 @@ function experimentmail__send_bulk_invite_new_mail_to_queue() {
                 WHERE p.email IS NULL";
     $result=or_query($query);
     while ($line=pdo_fetch_assoc($result)) {
-        $pars[]=array(':participant_id' => $line['bip_id']);
+        $pars[]=array(':bulk_id' => $line['bip_id']);
     }
     $query="INSERT INTO ".table('mail_queue')."
         SET timestamp='".$now."',
         mail_type='bulk_invite_new_mail',
-        mail_recipient= :participant_id";
+        bulk_id= :bulk_id";
     or_query($query,$pars);
     return count($pars);
 }
@@ -329,6 +329,7 @@ function experimentmail__send_mails_from_queue($number=0,$type="",$experiment_id
 
     $smails=array(); $smails_ids=array();
     $invitations=array(); $reminders=array(); $bulks=array(); $warnings=array();
+    $bulk_invites_new=array();
     $errors=array();
     $reminder_text=array(); $warning_text=array(); $inv_texts=array();
     $exps=array(); $sesss=array(); $parts=array(); $labs=array();
@@ -365,8 +366,10 @@ function experimentmail__send_mails_from_queue($number=0,$type="",$experiment_id
         // well, if experiment_id, session_id, recipient, footer or inv_text, add to array
         if (!isset($exps[$texp]) && $texp)  $exps[$texp]=orsee_db_load_array("experiments",$texp,"experiment_id");
         if (!isset($sesss[$tsess]) && $tsess) $sesss[$tsess]=orsee_db_load_array("sessions",$tsess,"session_id");
-        if (!isset($parts[$tpart]) && $tpart) $parts[$tpart]=orsee_db_load_array("participants",$tpart,"participant_id");
-        $tlang=$parts[$tpart]['language'];
+        if (!isset($parts[$tpart]) && $tpart) {
+            $parts[$tpart] = orsee_db_load_array("participants",$tpart,"participant_id");
+            $tlang = $parts[$tpart]['language'];
+        }
         if (!isset($footers[$tlang])) $footers[$tlang]=load_mail("public_mail_footer",$tlang);
         if ($ttype=="session_reminder" && !isset($reminder_text[$texp][$tlang])) {
             $mailtext=false;
@@ -392,16 +395,18 @@ function experimentmail__send_mails_from_queue($number=0,$type="",$experiment_id
         if ($ttype=="invitation" && !isset($slists[$texp][$tlang]))
             $slists[$texp][$tlang]=experimentmail__get_session_list($texp,$tlang);
         if ($ttype=="bulk_mail" && !isset($bulk_mails[$tbulk][$tlang]))
-                        $bulk_mails[$tbulk][$tlang]=experimentmail__load_bulk_mail($tbulk,$tlang);
+            $bulk_mails[$tbulk][$tlang]=experimentmail__load_bulk_mail($tbulk,$tlang);
 
         // check for missing values ...
-        if (!isset($parts[$tpart]['participant_id'])) {
-            $continue=false;
-            // email error: no recipient
-            $line['error'].="no_recipient:";
-        } else {
-            if (!isset($pform_fields[$tlang])) $pform_fields[$tlang]=participant__load_participant_email_fields($tlang);
-            $parts[$tpart]=experimentmail__fill_participant_details($parts[$tpart],$pform_fields[$tlang]);
+        if ($ttype != "bulk_invite_new_mail") {
+            if (!isset($parts[$tpart]['participant_id'])) {
+                $continue=false;
+                // email error: no recipient
+                $line['error'].="no_recipient:";
+            } else {
+                if (!isset($pform_fields[$tlang])) $pform_fields[$tlang]=participant__load_participant_email_fields($tlang);
+                $parts[$tpart]=experimentmail__fill_participant_details($parts[$tpart],$pform_fields[$tlang]);
+            }
         }
 
         if (!isset($exps[$texp]['experiment_id']) && ($ttype=="invitation" || $ttype=="session_reminder" || $ttype=="noshow_warning")) {
@@ -443,12 +448,14 @@ function experimentmail__send_mails_from_queue($number=0,$type="",$experiment_id
                 case "bulk_mail":
                     $bulks[]=$line;
                     break;
+                case "bulk_invite_new_mail":
+                    $bulk_invites_new[]=$line;
+                    break;
             }
         } else {
             $errors[]=$line;
         }
     }
-
     // fine now we have everything we want, and we can proceed with sending the mails
 
     $mails_sent=0; $mails_errors=0; $invmails_not_sent=0;
@@ -493,11 +500,23 @@ function experimentmail__send_mails_from_queue($number=0,$type="",$experiment_id
             $invmails_not_sent++;
         } else {
             $done=experimentmail__send_invitation_mail($mail,$parts[$mail['mail_recipient']],
-            $exps[$mail['experiment_id']],$inv_texts[$mail['experiment_id']][$tlang],
-            $slists[$mail['experiment_id']][$tlang],$footers[$tlang]);
+                    $exps[$mail['experiment_id']],$inv_texts[$mail['experiment_id']][$tlang],
+                    $slists[$mail['experiment_id']][$tlang],$footers[$tlang]);
             if ($done) $mails_sent++;
         }
         if ($done) {
+            $deleted=experimentmail__delete_from_queue($mail['mail_id']);
+        } else {
+            $mail['error']="sending";
+            $errors[]=$mail;
+        }
+    }
+
+    // bulk invite new participants
+    foreach ($bulk_invites_new as $mail) {
+        $done=experimentmail__send_bulk_invite_new_mail($mail);
+        if ($done) {
+            $mails_sent++;
             $deleted=experimentmail__delete_from_queue($mail['mail_id']);
         } else {
             $mail['error']="sending";
@@ -718,6 +737,22 @@ function experimentmail__send_bulk_mail($mail,$part,$bulk_mail,$footer) {
         $message=process_mail_template($mailtext,$part)."\n".process_mail_template($footer,$part);
         $sender=$settings['support_mail'];
         $headers="From: ".$sender."\r\n";
+        $done=experimentmail__mail($recipient,$subject,$message,$headers);
+        return $done;
+}
+
+function experimentmail__send_bulk_invite_new_mail($mail) {
+        $tlang = $settings['public_standard_language'];
+        $part = orsee_db_load_array('bulk_invite_participants', $mail['bulk_id'], 'bip_id');
+        $recipient = trim($part['email']);
+        $subject = load_language_symbol('bulk_invite_new_mail_subject',$tlang);
+
+        $mailtext = load_mail('public_bulk_invite_new_participants',$tlang);
+        $message = process_mail_template($mailtext,$part);
+
+        $sender = $settings['support_mail'];
+        $headers = "From: ".$sender."\r\n";
+
         $done=experimentmail__mail($recipient,$subject,$message,$headers);
         return $done;
 }
