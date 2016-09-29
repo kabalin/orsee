@@ -181,10 +181,9 @@ if ($proceed) {
     } else {
         echo '<TR><TD>';
         echo '
-<p>This feature is designed for sending invitation emails to potential subjects who were not previously registered with ORSEE. The text of this email is defined in "Default mails" section of ORSEE Settings and can be identified as "default_bulk_invite_new_participants".</p>
+<p>This feature is designed for sending invitation emails to potential subjects who were not previously registered with ORSEE. The text of this email is defined in "E-Mail templates" section of ORSEE Settings and can be identified as "public_bulk_invite_new_participants".</p>
 <p>The script is expecting you to upload CSV file (comma seprated values) containing two columns - \'name\' and \'email\' of particpants to invite. The first row optinally may contain column titles (\'name\' and \'email\'), column order is not important when first row contain titles, but if the first row is containing data of participant, it is assumed that first column is \'name\' and the second is \'email\'. To obtain CSV file from Excel spreadsheet, use \'File\' > \'Save as\' > \'Other formats\'.</p>
-<p>When the text file is ready, please upload it using the dialog below. All the data will be stored in the designated table in the database. Once the file is uploaded you will see the status of the email sending (and you will be able to control it by revisiting this page). If you want to upload the file again, you have to clear the data first by clicking "Clear the list" button. To initiate mail sending go to "Regular tasks" section of ORSEE settings and enable "send_invitations_bulk" job. You will not be able to clear or amend the data while "send_invitations_bulk" job is functioning.</p>
-<p>When you will see that all recepients received email (it will be reflcted in the status), please disable "send_invitations_bulk" job and clear the data.</p><br>';
+<p>When the text file is ready, please upload it using the dialog below. All the data will be stored in the designated table in the database. Once the file is uploaded you will see the summary of participants and you can initialte mailing by pressing "Send to all unique" button. The status of the email sending can be monitored by checking the number of sent emails at the summary page or by monitoring mailing queue. If you want to upload the file again, you have to clear the data first by clicking "Clear the list" button, it is only possible when there are no invitation mails in the queue to avoid data corruption.</p><br>';
 
         echo '</TD></TR>';
 
